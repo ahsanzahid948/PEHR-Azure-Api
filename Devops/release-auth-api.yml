@@ -1,0 +1,39 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+jobs:
+- job: BuildTestAndPack
+  variables: 
+    solution: 'PracticeEHR-API.sln'
+    buildPlatform: 'Any CPU'
+    buildConfiguration: 'Release'
+  pool:
+    vmimage: 'windows-latest'
+   
+  steps:
+  - task: NuGetCommand@2
+    name: 'NugetRestore'
+    inputs:
+      command: 'restore'
+      restoreSolution: '$(solution)'
+      feedsToUse: 'config'
+  
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'publish'
+      projects: '**/Authentication.API.csproj'
+      arguments: '--configuration $(buildConfiguration) --runtime win-x86 --output $(Build.ArtifactStagingDirectory)'
+      publishWebProjects: false
+      zipAfterPublish: false
+      modifyOutputPath: true
+    displayName: 'Publish Auth API Project'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: $(Build.ArtifactStagingDirectory)
+      artifactName: pehr_auth_api_zip
+      publishLocation: 'Container'
